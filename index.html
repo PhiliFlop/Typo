@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Typing Battle</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="app" class="centered">
+
+      <!-- Start Screen -->
+      <section id="start-screen" class="screen">
+        <h1 class="title">Tipp-Schlacht</h1>
+        <p class="subtitle">Überwinde deine Grenzen — zeige deine Geschwindigkeit und Präzision.</p>
+        <div class="controls">
+          <button id="start-btn" class="btn neon">Spiel starten</button>
+        </div>
+        <small class="hint">Dunkler Modus • Vanilla JS • Bereitgestellt für GitHub Pages</small>
+      </section>
+
+      <!-- Game Screen -->
+      <section id="game-screen" class="screen hidden">
+        <div id="countdown" class="countdown"></div>
+
+        <div class="game-top">
+          <div class="sentence-box" id="sentence-box"></div>
+          <input id="typing-input" class="typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        </div>
+
+        <div class="stats">
+          <div>WPM: <span id="wpm">0</span></div>
+          <div>Accuracy: <span id="accuracy">100%</span></div>
+          <div>Mistakes: <span id="mistakes">0</span></div>
+        </div>
+
+        <div id="leaderboard" class="leaderboard"></div>
+      </section>
+
+      <!-- End Screen -->
+      <section id="end-screen" class="screen hidden">
+        <h2 id="end-title"></h2>
+        <button id="play-again" class="btn neon">Play Again</button>
+      </section>
+
+    </div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

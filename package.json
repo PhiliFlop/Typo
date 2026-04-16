@@ -1,0 +1,17 @@
+{
+  "name": "typing-battle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Singleplayer typing battle game (vanilla JS + Vite)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^6.4.2"
+  }
+}
