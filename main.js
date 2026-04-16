@@ -15,7 +15,12 @@ const SENTENCES = [
   "Bei uns essen alle aus einem Teller, Deutschland hat einen neuen Bestseller",
   "Lehrer fragen, was ich für ein Deutsch in meinem Part schreibe,Glaub mir, diese Fame hat auch NachteileInternet, Mashkal, ballert auf lautlos",
   "Jaja, ist okay, es ballert nur auf lautlos, Ich mach trotzdem sechsstellig, sag mir, wer von euch macht auch so?",
-  "Zeig dir, was ne Baddie kann In Paris im Rari fahren"
+  "Zeig dir, was ne Baddie kann In Paris im Rari fahren",
+  "What is nine plus ten, twenty one",
+  "What color is a carrot, a carrot uhm, a carrot uhm.",
+  "Moin moin meine aktiven Freunde",
+  "Ich bins Marvin, ich bins Kelvin",
+  "Hat so viel Bargeld in der Jacke von Moncler, der Main-Character, Oberkörper wie ein Bär"
 ];
 
 // ---- DOM
@@ -108,15 +113,8 @@ export function startGame(){
   typingInput.value = '';
   typingInput.focus();
 
-  // Countdown 3..1 then go
-  let count = 3;
-  countdownEl.textContent = count;
-  beep(900,0.08,0.04);
-  const cd = setInterval(()=>{
-    count--;
-    if(count>0){ countdownEl.textContent = count; beep(900,0.06,0.04); }
-    else { clearInterval(cd); countdownEl.textContent = ''; beginRound(); }
-  },1000);
+  // Start game immediately
+  beginRound();
 }
 
 function beginRound(){
