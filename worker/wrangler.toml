@@ -1,12 +1,12 @@
-name = "typo-api"
+name = "typeshift-api"
 main = "src/index.js"
 compatibility_date = "2024-04-03"
 
 [env.production]
-route = "https://typo-api.YOUR_DOMAIN.workers.dev/*"
+route = "https://typeshift-api.YOUR_DOMAIN.workers.dev/*"
 zone_id = ""
 
 [[d1_databases]]
 binding = "DB"
-database_name = "typo"
-database_id = "c05c6dac-16b2-4ef9-8ead-d7355524830f"
+database_name = "typeshift"
+database_id = "53f6561c-ad90-428f-9cf4-4973fba85238"
