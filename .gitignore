@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+index.html
+main.js
+style.css
+package-lock.json
+vite.config.js
+README.md
