@@ -42,10 +42,10 @@ const endScreen = document.getElementById('end-screen');
 const endTitle = document.getElementById('end-title');
 const endMessage = document.getElementById('end-message');
 const playAgainBtn = document.getElementById('play-again');
-const viewLeaderboardBtn = document.getElementById('view-leaderboard');
 
 const leaderboardScreen = document.getElementById('leaderboard-screen');
 const globalLeaderboardEl = document.getElementById('global-leaderboard');
+const yourRankEl = document.getElementById('your-rank');
 const backToMenuBtn = document.getElementById('back-to-menu');
 
 // ---- State
@@ -63,6 +63,7 @@ let totalElapsed = 0;
 let points = 0; // player's score
 let lastCorrectCount = 0; // track for point calculation
 let playerName = ''; // player's name for leaderboard
+let lastResult = null;
 
 // API endpoint for Cloudflare Workers (you'll need to update this URL)
 const API_BASE = import.meta.env?.VITE_API_BASE || 'https://typeshift-api.philipp-kaiser.workers.dev'; // Replace with your actual Workers URL
@@ -275,7 +276,7 @@ function wonByHuman(){
 }
 
 // End game: show end screen with stats
-export function endGame(won, reason){
+export async function endGame(won, reason){
   if(!gameRunning) return;
   gameRunning = false;
   cancelAnimationFrame(rafId);
@@ -287,10 +288,14 @@ export function endGame(won, reason){
   endMessage.textContent = `${playerName} — ${points} Punkte`;
 
   // Save score to leaderboard
-  saveScore(playerName, points);
+  lastResult = { name: playerName, score: points, rank: null };
+  const rank = await saveScore(playerName, points);
+  lastResult.rank = rank;
 
   // small sound
   if(won) beep(880,0.12,0.06); else beep(180,0.18,0.06);
+
+  showLeaderboardScreen();
 }
 
 // Save score to Cloudflare D1 via Workers
@@ -301,26 +306,32 @@ async function saveScore(name, score){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, score })
     });
-    if(!response.ok) console.warn('Fehler beim Speichern des Scores');
+    if(!response.ok){
+      console.warn('Fehler beim Speichern des Scores');
+      return null;
+    }
+    const data = await response.json().catch(()=> null);
+    return data && Number.isInteger(data.rank) ? data.rank : null;
   }catch(e){
     console.warn('Netzwerkfehler beim Score speichern:', e);
+    return null;
   }
 }
 
 // Load and display global leaderboard
-async function loadLeaderboard(targetEl, limit, emptyMessage){
+async function loadLeaderboard(targetEl, limit, emptyMessage, highlight){
   if(!targetEl) return;
   try{
     const response = await fetch(`${API_BASE}/api/scores`);
     const data = await response.json();
-    renderLeaderboard(targetEl, data.scores || [], limit, emptyMessage);
+    renderLeaderboard(targetEl, data.scores || [], limit, emptyMessage, highlight);
   }catch(e){
     console.warn('Fehler beim Laden des Leaderboards:', e);
     targetEl.innerHTML = '<p class="empty-leaderboard">Leaderboard nicht verfügbar</p>';
   }
 }
 
-function renderLeaderboard(targetEl, scores, limit, emptyMessage){
+function renderLeaderboard(targetEl, scores, limit, emptyMessage, highlight){
   targetEl.innerHTML = '';
   if(scores.length === 0){
     targetEl.innerHTML = `<p class="empty-leaderboard">${emptyMessage}</p>`;
@@ -328,7 +339,8 @@ function renderLeaderboard(targetEl, scores, limit, emptyMessage){
   }
   scores.slice(0, limit).forEach((entry, i)=>{
     const row = document.createElement('div');
-    row.className = 'player-row';
+    const isHighlight = highlight && entry.name === highlight.name && entry.score === highlight.score;
+    row.className = 'player-row' + (isHighlight ? ' highlight' : '');
     row.innerHTML = `
       <div class="player-meta">
         <div class="player-name">#${i+1} — ${entry.name}</div>
@@ -338,6 +350,34 @@ function renderLeaderboard(targetEl, scores, limit, emptyMessage){
     `;
     targetEl.appendChild(row);
   });
+
+  if(highlight && highlight.rank && highlight.rank > limit){
+    const divider = document.createElement('div');
+    divider.className = 'leaderboard-divider';
+    targetEl.appendChild(divider);
+
+    const row = document.createElement('div');
+    row.className = 'player-row highlight';
+    row.innerHTML = `
+      <div class="player-meta">
+        <div class="player-name">#${highlight.rank} — ${highlight.name}</div>
+        <div class="player-stats">${highlight.score} Punkte</div>
+      </div>
+      <div class="badge">${highlight.score}</div>
+    `;
+    targetEl.appendChild(row);
+  }
+}
+
+function showLeaderboardScreen(){
+  endScreen.classList.add('hidden');
+  leaderboardScreen.classList.remove('hidden');
+  if(lastResult && yourRankEl){
+    yourRankEl.textContent = lastResult.rank
+      ? `Dein Ergebnis: ${lastResult.score} Punkte • Rang #${lastResult.rank}`
+      : `Dein Ergebnis: ${lastResult.score} Punkte`;
+  }
+  loadLeaderboard(globalLeaderboardEl, 10, 'Noch keine Scores...', lastResult);
 }
 
 // Main loop
@@ -373,17 +413,13 @@ startBtn.addEventListener('click', ()=> startGame());
 typingInput.addEventListener('input', updateTyping);
 playAgainBtn.addEventListener('click', ()=>{
   // reset screens
+  lastResult = null;
   playerNameInput.value = '';
   startScreen.classList.remove('hidden');
   endScreen.classList.add('hidden');
   leaderboardScreen.classList.add('hidden');
   typingInput.focus();
   loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
-});
-viewLeaderboardBtn.addEventListener('click', ()=>{
-  endScreen.classList.add('hidden');
-  leaderboardScreen.classList.remove('hidden');
-  loadLeaderboard(globalLeaderboardEl, 20, 'Noch keine Scores...');
 });
 backToMenuBtn.addEventListener('click', ()=>{
   leaderboardScreen.classList.add('hidden');

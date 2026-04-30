@@ -55,7 +55,13 @@ export default {
         );
         await stmt.bind(cleanName, cleanScore, new Date().toISOString()).run();
 
-        return new Response(JSON.stringify({ success: true }), {
+        const rankStmt = env.DB.prepare(
+          'SELECT COUNT(*) as higher FROM scores WHERE score > ?'
+        );
+        const rankResult = await rankStmt.bind(cleanScore).first();
+        const rank = (rankResult?.higher || 0) + 1;
+
+        return new Response(JSON.stringify({ success: true, rank }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (e) {
