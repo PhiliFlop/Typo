@@ -36,6 +36,7 @@ const wpmEl = document.getElementById('wpm');
 const accuracyEl = document.getElementById('accuracy');
 const mistakesEl = document.getElementById('mistakes');
 const leaderboardEl = document.getElementById('leaderboard');
+const startLeaderboardList = document.getElementById('start-leaderboard-list');
 
 const endScreen = document.getElementById('end-screen');
 const endTitle = document.getElementById('end-title');
@@ -64,7 +65,7 @@ let lastCorrectCount = 0; // track for point calculation
 let playerName = ''; // player's name for leaderboard
 
 // API endpoint for Cloudflare Workers (you'll need to update this URL)
-const API_BASE = 'https://typo-api.YOUR_DOMAIN.workers.dev'; // Replace with your actual Workers URL
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://typo-api.YOUR_DOMAIN.workers.dev'; // Replace with your actual Workers URL
 
 const MAX_MISTAKES = 999; // no practical limit now; points system is the constraint
 
@@ -100,7 +101,7 @@ export function startGame(){
   // Check if name is entered
   playerName = playerNameInput.value.trim();
   if(!playerName){
-    alert('Bitte gib deinen Namen ein!');
+    alert('Bitte gib deinen Namen mit Klasse ein!');
     return;
   }
 
@@ -307,24 +308,25 @@ async function saveScore(name, score){
 }
 
 // Load and display global leaderboard
-async function loadLeaderboard(){
+async function loadLeaderboard(targetEl, limit, emptyMessage){
+  if(!targetEl) return;
   try{
     const response = await fetch(`${API_BASE}/api/scores`);
     const data = await response.json();
-    displayLeaderboard(data.scores || []);
+    renderLeaderboard(targetEl, data.scores || [], limit, emptyMessage);
   }catch(e){
     console.warn('Fehler beim Laden des Leaderboards:', e);
-    globalLeaderboardEl.innerHTML = '<p style="text-align:center">Leaderboard nicht verfügbar</p>';
+    targetEl.innerHTML = '<p class="empty-leaderboard">Leaderboard nicht verfügbar</p>';
   }
 }
 
-function displayLeaderboard(scores){
-  globalLeaderboardEl.innerHTML = '';
+function renderLeaderboard(targetEl, scores, limit, emptyMessage){
+  targetEl.innerHTML = '';
   if(scores.length === 0){
-    globalLeaderboardEl.innerHTML = '<p style="text-align:center">Noch keine Scores...</p>';
+    targetEl.innerHTML = `<p class="empty-leaderboard">${emptyMessage}</p>`;
     return;
   }
-  scores.slice(0, 20).forEach((entry, i)=>{
+  scores.slice(0, limit).forEach((entry, i)=>{
     const row = document.createElement('div');
     row.className = 'player-row';
     row.innerHTML = `
@@ -334,7 +336,7 @@ function displayLeaderboard(scores){
       </div>
       <div class="badge">${entry.score}</div>
     `;
-    globalLeaderboardEl.appendChild(row);
+    targetEl.appendChild(row);
   });
 }
 
@@ -376,17 +378,21 @@ playAgainBtn.addEventListener('click', ()=>{
   endScreen.classList.add('hidden');
   leaderboardScreen.classList.add('hidden');
   typingInput.focus();
+  loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
 });
 viewLeaderboardBtn.addEventListener('click', ()=>{
   endScreen.classList.add('hidden');
   leaderboardScreen.classList.remove('hidden');
-  loadLeaderboard();
+  loadLeaderboard(globalLeaderboardEl, 20, 'Noch keine Scores...');
 });
 backToMenuBtn.addEventListener('click', ()=>{
   leaderboardScreen.classList.add('hidden');
   startScreen.classList.remove('hidden');
   playerNameInput.focus();
+  loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
 });
+
+loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
 
 // make startGame available on global for quick debugging
 window.startGame = startGame;
