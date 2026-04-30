@@ -19,7 +19,9 @@ body{
 .hidden{display:none}
 .title{font-size:40px;margin:6px 0 4px;text-align:center;color:var(--accent);text-shadow:0 0 8px rgba(0,230,255,0.12)}
 .subtitle{color:var(--muted);text-align:center;margin:0 0 18px}
-.controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:6px}
+.controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:6px;flex-wrap:wrap}
+.name-input{padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#05121a;color:#dbefff;font-size:16px;min-width:180px}
+.name-input::placeholder{color:var(--muted)}
 .btn{padding:10px 18px;border-radius:8px;border:0;cursor:pointer;background:rgba(255,255,255,0.03);color:var(--accent);font-weight:600}
 .neon{box-shadow:0 6px 30px rgba(0,230,255,0.06),0 0 18px rgba(0,230,255,0.08);border:1px solid rgba(0,230,255,0.12)}
 .hint{text-align:center;color:var(--muted);display:block;margin-top:12px}

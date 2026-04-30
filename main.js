@@ -14,7 +14,7 @@ const SENTENCES = [
   "Das Leben ist ein Traum, doch wer erwacht, der schaut die Wahrheit unverhohlen.",
   "Bei uns essen alle aus einem Teller, Deutschland hat einen neuen Bestseller",
   "Lehrer fragen, was ich für ein Deutsch in meinem Part schreibe,Glaub mir, diese Fame hat auch NachteileInternet, Mashkal, ballert auf lautlos",
-  "Jaja, ist okay, es ballert nur auf lautlos, Ich mach trotzdem sechsstellig, sag mir, wer von euch macht auch so?",
+  "Jaja, ist okay, es ballert nur auf lautlos, ich mach trotzdem sechsstellig, sag mir, wer von euch macht auch so?",
   "Zeig dir, was ne Baddie kann In Paris im Rari fahren",
   "What is nine plus ten, twenty one",
   "What color is a carrot, a carrot uhm, a carrot uhm.",
@@ -26,6 +26,7 @@ const SENTENCES = [
 // ---- DOM
 const startScreen = document.getElementById('start-screen');
 const startBtn = document.getElementById('start-btn');
+const playerNameInput = document.getElementById('player-name');
 
 const gameScreen = document.getElementById('game-screen');
 const countdownEl = document.getElementById('countdown');
@@ -38,7 +39,13 @@ const leaderboardEl = document.getElementById('leaderboard');
 
 const endScreen = document.getElementById('end-screen');
 const endTitle = document.getElementById('end-title');
+const endMessage = document.getElementById('end-message');
 const playAgainBtn = document.getElementById('play-again');
+const viewLeaderboardBtn = document.getElementById('view-leaderboard');
+
+const leaderboardScreen = document.getElementById('leaderboard-screen');
+const globalLeaderboardEl = document.getElementById('global-leaderboard');
+const backToMenuBtn = document.getElementById('back-to-menu');
 
 // ---- State
 let players = []; // only human player in solo mode
@@ -54,6 +61,10 @@ let totalElapsed = 0;
 
 let points = 0; // player's score
 let lastCorrectCount = 0; // track for point calculation
+let playerName = ''; // player's name for leaderboard
+
+// API endpoint for Cloudflare Workers (you'll need to update this URL)
+const API_BASE = 'https://typo-api.YOUR_DOMAIN.workers.dev'; // Replace with your actual Workers URL
 
 const MAX_MISTAKES = 999; // no practical limit now; points system is the constraint
 
@@ -86,6 +97,13 @@ function pickSentence(){
 
 // startGame: initialize players and begin countdown
 export function startGame(){
+  // Check if name is entered
+  playerName = playerNameInput.value.trim();
+  if(!playerName){
+    alert('Bitte gib deinen Namen ein!');
+    return;
+  }
+
   // Solo game: only the human player
   players = [];
   points = 0;
@@ -94,7 +112,7 @@ export function startGame(){
 
   const human = {
     id: 'YOU',
-    name: 'You',
+    name: playerName,
     progress: 0,
     wpm: 0,
     accuracy: 100,
@@ -265,9 +283,59 @@ export function endGame(won, reason){
   gameScreen.classList.add('hidden');
   endScreen.classList.remove('hidden');
   endTitle.textContent = `Spiel vorbei! Deine Punktzahl: ${points}`;
+  endMessage.textContent = `${playerName} — ${points} Punkte`;
+
+  // Save score to leaderboard
+  saveScore(playerName, points);
 
   // small sound
   if(won) beep(880,0.12,0.06); else beep(180,0.18,0.06);
+}
+
+// Save score to Cloudflare D1 via Workers
+async function saveScore(name, score){
+  try{
+    const response = await fetch(`${API_BASE}/api/scores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score })
+    });
+    if(!response.ok) console.warn('Fehler beim Speichern des Scores');
+  }catch(e){
+    console.warn('Netzwerkfehler beim Score speichern:', e);
+  }
+}
+
+// Load and display global leaderboard
+async function loadLeaderboard(){
+  try{
+    const response = await fetch(`${API_BASE}/api/scores`);
+    const data = await response.json();
+    displayLeaderboard(data.scores || []);
+  }catch(e){
+    console.warn('Fehler beim Laden des Leaderboards:', e);
+    globalLeaderboardEl.innerHTML = '<p style="text-align:center">Leaderboard nicht verfügbar</p>';
+  }
+}
+
+function displayLeaderboard(scores){
+  globalLeaderboardEl.innerHTML = '';
+  if(scores.length === 0){
+    globalLeaderboardEl.innerHTML = '<p style="text-align:center">Noch keine Scores...</p>';
+    return;
+  }
+  scores.slice(0, 20).forEach((entry, i)=>{
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <div class="player-meta">
+        <div class="player-name">#${i+1} — ${entry.name}</div>
+        <div class="player-stats">${entry.score} Punkte</div>
+      </div>
+      <div class="badge">${entry.score}</div>
+    `;
+    globalLeaderboardEl.appendChild(row);
+  });
 }
 
 // Main loop
@@ -303,8 +371,21 @@ startBtn.addEventListener('click', ()=> startGame());
 typingInput.addEventListener('input', updateTyping);
 playAgainBtn.addEventListener('click', ()=>{
   // reset screens
+  playerNameInput.value = '';
   startScreen.classList.remove('hidden');
   endScreen.classList.add('hidden');
+  leaderboardScreen.classList.add('hidden');
+  typingInput.focus();
+});
+viewLeaderboardBtn.addEventListener('click', ()=>{
+  endScreen.classList.add('hidden');
+  leaderboardScreen.classList.remove('hidden');
+  loadLeaderboard();
+});
+backToMenuBtn.addEventListener('click', ()=>{
+  leaderboardScreen.classList.add('hidden');
+  startScreen.classList.remove('hidden');
+  playerNameInput.focus();
 });
 
 // make startGame available on global for quick debugging

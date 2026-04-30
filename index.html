@@ -11,12 +11,13 @@
 
       <!-- Start Screen -->
       <section id="start-screen" class="screen">
-        <h1 class="title">Typeshift</h1>
+        <h1 class="title">Tipp-Schlacht</h1>
         <p class="subtitle">Überwinde deine Grenzen — zeige deine Geschwindigkeit und Präzision.</p>
         <div class="controls">
+          <input id="player-name" type="text" placeholder="Dein Name..." class="name-input" maxlength="20" />
           <button id="start-btn" class="btn neon">Spiel starten</button>
         </div>
-        <small class="hint">Sei einfach schneller als die Anderen Typeshift</small>
+        <small class="hint">Dunkler Modus • Vanilla JS • Bereitgestellt auf Cloudflare Pages</small>
       </section>
 
       <!-- Game Screen -->
@@ -40,7 +41,16 @@
       <!-- End Screen -->
       <section id="end-screen" class="screen hidden">
         <h2 id="end-title"></h2>
-        <button id="play-again" class="btn neon">Play Again</button>
+        <p id="end-message" style="text-align: center; margin: 20px 0;"></p>
+        <button id="play-again" class="btn neon">Nochmal spielen</button>
+        <button id="view-leaderboard" class="btn neon" style="margin-top: 8px;">Leaderboard</button>
+      </section>
+
+      <!-- Leaderboard Screen -->
+      <section id="leaderboard-screen" class="screen hidden">
+        <h2>Globales Leaderboard</h2>
+        <div id="global-leaderboard" class="leaderboard" style="margin-top: 20px;"></div>
+        <button id="back-to-menu" class="btn neon" style="margin-top: 20px;">Zurück zum Menü</button>
       </section>
 
     </div>

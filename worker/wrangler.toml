@@ -1,0 +1,12 @@
+name = "typo-api"
+main = "src/index.js"
+compatibility_date = "2024-04-03"
+
+[env.production]
+route = "https://typo-api.YOUR_DOMAIN.workers.dev/*"
+zone_id = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "typo"
+database_id = "YOUR_DATABASE_ID"
