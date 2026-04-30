@@ -65,7 +65,7 @@ let lastCorrectCount = 0; // track for point calculation
 let playerName = ''; // player's name for leaderboard
 
 // API endpoint for Cloudflare Workers (you'll need to update this URL)
-const API_BASE = import.meta.env?.VITE_API_BASE || 'https://typo-api.YOUR_DOMAIN.workers.dev'; // Replace with your actual Workers URL
+const API_BASE = import.meta.env?.VITE_API_BASE || 'https://typeshift-api.philipp-kaiser.workers.dev'; // Replace with your actual Workers URL
 
 const MAX_MISTAKES = 999; // no practical limit now; points system is the constraint
 
