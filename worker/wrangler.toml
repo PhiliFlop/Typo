@@ -9,4 +9,4 @@ zone_id = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "typo"
-database_id = "YOUR_DATABASE_ID"
+database_id = "c05c6dac-16b2-4ef9-8ead-d7355524830f"
