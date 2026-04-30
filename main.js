@@ -38,11 +38,6 @@ const mistakesEl = document.getElementById('mistakes');
 const leaderboardEl = document.getElementById('leaderboard');
 const startLeaderboardList = document.getElementById('start-leaderboard-list');
 
-const endScreen = document.getElementById('end-screen');
-const endTitle = document.getElementById('end-title');
-const endMessage = document.getElementById('end-message');
-const playAgainBtn = document.getElementById('play-again');
-
 const leaderboardScreen = document.getElementById('leaderboard-screen');
 const globalLeaderboardEl = document.getElementById('global-leaderboard');
 const yourRankEl = document.getElementById('your-rank');
@@ -64,6 +59,16 @@ let points = 0; // player's score
 let lastCorrectCount = 0; // track for point calculation
 let playerName = ''; // player's name for leaderboard
 let lastResult = null;
+let cheated = false;
+let cheatMessage = '';
+
+const screens = [startScreen, gameScreen, leaderboardScreen];
+function setActiveScreen(active){
+  screens.forEach((screen)=>{
+    if(!screen) return;
+    screen.classList.toggle('hidden', screen !== active);
+  });
+}
 
 // API endpoint for Cloudflare Workers (you'll need to update this URL)
 const API_BASE = import.meta.env?.VITE_API_BASE || 'https://typeshift-api.philipp-kaiser.workers.dev'; // Replace with your actual Workers URL
@@ -107,6 +112,8 @@ export function startGame(){
   }
 
   // Solo game: only the human player
+  cheated = false;
+  cheatMessage = '';
   players = [];
   points = 0;
   lastCorrectCount = 0;
@@ -127,9 +134,7 @@ export function startGame(){
   players.push(human);
 
   // UI
-  startScreen.classList.add('hidden');
-  endScreen.classList.add('hidden');
-  gameScreen.classList.remove('hidden');
+  setActiveScreen(gameScreen);
   typingInput.value = '';
   typingInput.focus();
 
@@ -281,16 +286,17 @@ export async function endGame(won, reason){
   gameRunning = false;
   cancelAnimationFrame(rafId);
 
-  // UI: show end screen
-  gameScreen.classList.add('hidden');
-  endScreen.classList.remove('hidden');
-  endTitle.textContent = `Spiel vorbei! Deine Punktzahl: ${points}`;
-  endMessage.textContent = `${playerName} — ${points} Punkte`;
+  // UI: show leaderboard screen only
+  setActiveScreen(leaderboardScreen);
 
-  // Save score to leaderboard
-  lastResult = { name: playerName, score: points, rank: null };
-  const rank = await saveScore(playerName, points);
-  lastResult.rank = rank;
+  if(cheated){
+    lastResult = { name: playerName, score: 0, rank: null };
+  } else {
+    // Save score to leaderboard
+    lastResult = { name: playerName, score: points, rank: null };
+    const rank = await saveScore(playerName, points);
+    lastResult.rank = rank;
+  }
 
   // small sound
   if(won) beep(880,0.12,0.06); else beep(180,0.18,0.06);
@@ -340,7 +346,8 @@ function renderLeaderboard(targetEl, scores, limit, emptyMessage, highlight){
   scores.slice(0, limit).forEach((entry, i)=>{
     const row = document.createElement('div');
     const isHighlight = highlight && entry.name === highlight.name && entry.score === highlight.score;
-    row.className = 'player-row' + (isHighlight ? ' highlight' : '');
+    const rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : '';
+    row.className = 'player-row' + rankClass + (isHighlight ? ' highlight' : '');
     row.innerHTML = `
       <div class="player-meta">
         <div class="player-name">#${i+1} — ${entry.name}</div>
@@ -370,12 +377,15 @@ function renderLeaderboard(targetEl, scores, limit, emptyMessage, highlight){
 }
 
 function showLeaderboardScreen(){
-  endScreen.classList.add('hidden');
-  leaderboardScreen.classList.remove('hidden');
+  setActiveScreen(leaderboardScreen);
   if(lastResult && yourRankEl){
-    yourRankEl.textContent = lastResult.rank
-      ? `Dein Ergebnis: ${lastResult.score} Punkte • Rang #${lastResult.rank}`
-      : `Dein Ergebnis: ${lastResult.score} Punkte`;
+    if(cheated){
+      yourRankEl.textContent = cheatMessage || 'Cheaten ist nicht erlaubt. Kein Score gespeichert.';
+    } else {
+      yourRankEl.textContent = lastResult.rank
+        ? `Dein Ergebnis: ${lastResult.score} Punkte • Rang #${lastResult.rank}`
+        : `Dein Ergebnis: ${lastResult.score} Punkte`;
+    }
   }
   loadLeaderboard(globalLeaderboardEl, 10, 'Noch keine Scores...', lastResult);
 }
@@ -411,19 +421,22 @@ function randRange(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 // wiring
 startBtn.addEventListener('click', ()=> startGame());
 typingInput.addEventListener('input', updateTyping);
-playAgainBtn.addEventListener('click', ()=>{
-  // reset screens
-  lastResult = null;
-  playerNameInput.value = '';
-  startScreen.classList.remove('hidden');
-  endScreen.classList.add('hidden');
-  leaderboardScreen.classList.add('hidden');
-  typingInput.focus();
-  loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
+typingInput.addEventListener('paste', (event)=>{
+  event.preventDefault();
+  handleCheat();
+});
+typingInput.addEventListener('beforeinput', (event)=>{
+  if(event.inputType === 'insertFromPaste'){
+    event.preventDefault();
+    handleCheat();
+  }
+});
+typingInput.addEventListener('drop', (event)=>{
+  event.preventDefault();
+  handleCheat();
 });
 backToMenuBtn.addEventListener('click', ()=>{
-  leaderboardScreen.classList.add('hidden');
-  startScreen.classList.remove('hidden');
+  setActiveScreen(startScreen);
   playerNameInput.focus();
   loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
 });
@@ -432,3 +445,11 @@ loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
 
 // make startGame available on global for quick debugging
 window.startGame = startGame;
+
+function handleCheat(){
+  if(cheated || !gameRunning) return;
+  cheated = true;
+  cheatMessage = 'Cheaten ist nicht erlaubt. Dein Score wurde nicht gewertet.';
+  alert('Nicht cheaten! Dein Score wird nicht gewertet.');
+  endGame(false, 'Cheating');
+}
