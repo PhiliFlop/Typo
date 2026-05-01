@@ -42,6 +42,7 @@ const leaderboardScreen = document.getElementById('leaderboard-screen');
 const globalLeaderboardEl = document.getElementById('global-leaderboard');
 const yourRankEl = document.getElementById('your-rank');
 const backToMenuBtn = document.getElementById('back-to-menu');
+const startHint = document.getElementById('start-hint');
 
 // ---- State
 let players = []; // only human player in solo mode
@@ -74,6 +75,14 @@ function setActiveScreen(active){
 const API_BASE = import.meta.env?.VITE_API_BASE || 'https://typeshift-api.philipp-kaiser.workers.dev'; // Replace with your actual Workers URL
 
 const MAX_MISTAKES = 999; // no practical limit now; points system is the constraint
+
+const START_HINTS = [
+  'get mogged by Abi 2028',
+  '67',
+  'Instagram > Tiktok ?',
+  'Schoko oder Vanille?',
+  'Hast du schon probiert zu cheaten? 😉',
+];
 
 // Utility: play a short beep (optional sound effects)
 function beep(freq = 440, duration = 0.12, vol = 0.05){
@@ -442,6 +451,10 @@ backToMenuBtn.addEventListener('click', ()=>{
 });
 
 loadLeaderboard(startLeaderboardList, 10, 'Noch keine Scores...');
+if(startHint){
+  const nextHint = START_HINTS[Math.floor(Math.random() * START_HINTS.length)];
+  startHint.textContent = nextHint;
+}
 
 // make startGame available on global for quick debugging
 window.startGame = startGame;
